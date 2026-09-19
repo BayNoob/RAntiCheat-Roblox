@@ -14,13 +14,14 @@ config.RateLimits = {
 	["MaxTableDepth"] = {20,"KICK"},
 	["MaxStringLength"] = {4000,"KICK"},
 	["RemoteEventCallPS"] = {300,"KICK"},
+	["UnReliableRemoteEventCallPS"] = {300,"KICK"},
 }
 
 config.Protections = {
 	["AntiDistanceRemove"] = {true,"KICK"},  --to disable change true with false
 	["RemoteEventProtection"] = {true,"KICK"},
 	["RemoteFunctionProtection"] = {true,"KICK"},
-	
+	["UnReliableRemoteEventProtection"] = {true,"KICK"}
 }
 
 config.Defaults = {
@@ -28,7 +29,6 @@ config.Defaults = {
 	["ExcludeAltAccountsOnBan"] = true,
 	["ApplyToUniverseOnBan"] = true,
 	["DefaultTimeOnBan"] = -1,
-	
 }
 
 return config

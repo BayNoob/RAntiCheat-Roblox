@@ -7,6 +7,7 @@ game:GetService("Players").PlayerAdded:Connect(function(plr)
 	LimitsPerPlayer[plr.Name] = {
 		["RemoteFunctionCall"] = {0,os.clock()},
 		["RemoteEventCall"] = {0,os.clock()},
+		["UnReliableRemoteEventCall"] = {0,os.clock()},
 	}
 end)
 
@@ -18,6 +19,7 @@ for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
 	LimitsPerPlayer[plr.Name] = {
 		["RemoteFunctionCall"] = {0,os.clock()},
 		["RemoteEventCall"] = {0,os.clock()},
+		["UnReliableRemoteEventCall"] = {0,os.clock()},
 	}
 end
 
@@ -83,6 +85,48 @@ function funcs.Punish(plr:Player,punishment:string,reason: string?)
 	end
 end
 
+
+local function Validate(value,depth,plr,length)
+	length.count += 1
+	if typeof(value) == "string" then
+		if #value > config.RateLimits.MaxStringLength[1] then
+			funcs.Punish(plr,config.RateLimits.MaxStringLength[2] or "KICK",config.RateLimits.MaxStringLength[3] or nil)
+			return false
+		end
+	elseif typeof(value) == "number" then
+		if value >= math.huge or -value <= -math.huge or value ~= value then
+			funcs.Punish(plr,"KICK",".. Invalid Number")
+			return false
+		end
+	end
+	if length.count > config.RateLimits.MaxTableLength[1] then
+		funcs.Punish(plr,config.RateLimits.MaxTableLength[2] or "KICK",config.RateLimits.MaxTableLength[3] or nil)
+		return false
+	end
+	
+	if typeof(value) ~= "table" then
+		return true
+	end
+
+	if depth > config.RateLimits.MaxTableDepth[1] then
+		funcs.Punish(plr,config.RateLimits.MaxTableDepth[2] or "KICK",config.RateLimits.MaxTableDepth[3] or nil)
+		return false
+	end
+
+	for key,child in value do
+
+		if not Validate(key,depth) then
+			return false
+		end
+
+		if not Validate(child,depth+1) then
+			return false
+		end
+	end
+
+	return true
+end
+
 function funcs.RemoteEventProtection()
 	if config.Protections.RemoteEventProtection[1] ~= true then
 		return
@@ -107,63 +151,21 @@ function funcs.RemoteEventProtection()
 				return
 			end
 			
-			local length = 0
-
-			local function Validate(value,depth)
-
-				length += 1
-				if typeof(value) == "string" then
-					if #value > config.RateLimits.MaxStringLength[1] then
-						funcs.Punish(plr,config.RateLimits.MaxStringLength[2] or "KICK",config.RateLimits.MaxStringLength[3] or nil)
-						return false
-					end
-				elseif typeof(value) == "number" then
-					if value >= math.huge or -value <= -math.huge or value ~= value then
-						funcs.Punish(plr,"KICK",".. Invalid Number")
-						return false
-					end
-				end
-				if length > config.RateLimits.MaxTableLength[1] then
-					funcs.Punish(plr,config.RateLimits.MaxTableLength[2] or "KICK",config.RateLimits.MaxTableLength[3] or nil)
-					return false
-				end
-				
-				if typeof(value) ~= "table" then
-					return true
-				end
-
-				if depth > config.RateLimits.MaxTableDepth[1] then
-					funcs.Punish(plr,config.RateLimits.MaxTableDepth[2] or "KICK",config.RateLimits.MaxTableDepth[3] or nil)
-					return false
-				end
-
-				for key,child in value do
-
-					if not Validate(key,depth) then
-						return false
-					end
-
-					if not Validate(child,depth+1) then
-						return false
-					end
-				end
-
-				return true
-			end
+			local length = {count = 0}
 
 			for _, variable in ipairs(variables) do
 				if typeof(variable) == "table" then
-					if not Validate(variable,1) then
+					if not Validate(variable,1,plr,length) then
 						return
 					end
-					length = 0
+					length.count = 0
 				elseif typeof(variable) == "string" then
 					if #variable > config.RateLimits.MaxStringLength[1] then
 						funcs.Punish(plr,config.RateLimits.MaxStringLength[2] or "KICK",config.RateLimits.MaxStringLength[3] or nil)
 						return
 					end
 				elseif typeof(variable) == "number" then
-					if variable >= math.huge or -variable <= -math.huge or variable ~= variable then
+					if variable == math.huge or variable == -math.huge or variable ~= variable then
 						funcs.Punish(plr,"KICK",".. Invalid Number")
 						return
 					end
@@ -188,6 +190,80 @@ function funcs.RemoteEventProtection()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("RemoteEvent") then
+			remoteconnections[i]:Disconnect()
+			remoteconnections[i] = nil
+		end
+	end)
+	
+	for event,_ in pairs(remoteconnections) do
+		local connect = connectremote(event)
+		remoteconnections[event] = connect
+	end
+end
+
+function funcs.UnReliableRemoteEventProtection()
+	if config.Protections.UnReliableRemoteEventProtection[1] ~= true then
+		return
+	end
+	
+	local remoteconnections = {}
+	
+	local function connectremote(event:UnreliableRemoteEvent)
+		local connect = event.OnServerEvent:Connect(function(plr,...)
+			if (os.clock() - LimitsPerPlayer[plr.Name].UnReliableRemoteEventCall[2]) > 1 then
+				LimitsPerPlayer[plr.Name].UnReliableRemoteEventCall = {0,os.clock()}
+			end
+			LimitsPerPlayer[plr.Name].UnReliableRemoteEventCall[1] += 1
+			if LimitsPerPlayer[plr.Name].UnReliableRemoteEventCall[1] > config.RateLimits.UnReliableRemoteEventCallPS[1] then
+				funcs.Punish(plr,config.RateLimits.UnReliableRemoteEventCallPS[2] or "KICK",config.RateLimits.UnReliableRemoteEventCallPS[3] or nil)
+				return
+			end
+			local variables = {...}
+
+			if table.pack(...).n > config.RateLimits.MaxVariableCount[1] then
+				funcs.Punish(plr,config.RateLimits.MaxVariableCount[2] or "KICK",config.RateLimits.MaxVariableCount[3] or nil)
+				return
+			end
+			
+			local length = {count = 0}
+
+			for _, variable in ipairs(variables) do
+				if typeof(variable) == "table" then
+					if not Validate(variable,1,plr,length) then
+						return
+					end
+					length.count = 0
+				elseif typeof(variable) == "string" then
+					if #variable > config.RateLimits.MaxStringLength[1] then
+						funcs.Punish(plr,config.RateLimits.MaxStringLength[2] or "KICK",config.RateLimits.MaxStringLength[3] or nil)
+						return
+					end
+				elseif typeof(variable) == "number" then
+					if variable == math.huge or variable == -math.huge or variable ~= variable then
+						funcs.Punish(plr,"KICK",".. Invalid Number")
+						return
+					end
+				end
+			end
+		end)
+		return connect
+	end
+	
+	for _, i in pairs(game:GetDescendants()) do
+		if i:IsA("UnreliableRemoteEvent") then
+			remoteconnections[i] = true
+		end
+	end
+	
+	game.DescendantAdded:Connect(function(i)
+		if i:IsA("UnreliableRemoteEvent") then
+			local connect = connectremote(i)
+			remoteconnections[i] = connect
+		end
+	end)
+	
+	game.DescendantRemoving:Connect(function(i)
+		if i:IsA("UnreliableRemoteEvent") then
 			remoteconnections[i]:Disconnect()
 			remoteconnections[i] = nil
 		end
@@ -314,47 +390,15 @@ function funcs.OnServerInvoke(func)
 				return
 			end
 			
-			local length = 0
-			
-			local function Validate(value,depth)
-				
-				length += 1
-				
-				if length > config.RateLimits.MaxTableLength[1] then
-					funcs.Punish(plr,config.RateLimits.MaxTableLength[2] or "KICK",config.RateLimits.MaxTableLength[3] or nil)
-					return false
-				end
-				
-				if typeof(value) ~= "table" then
-					return true
-				end
-				
-				if depth > config.RateLimits.MaxTableDepth[1] then
-					funcs.Punish(plr,config.RateLimits.MaxTableDepth[2] or "KICK",config.RateLimits.MaxTableDepth[3] or nil)
-					return false
-				end
-				
-				for key,child in value do
-					
-					if not Validate(key,depth) then
-						return false
-					end
-					if typeof(child) == "table" then
-						if not Validate(child,depth+1) then
-							return false
-						end
-					end
-				end
-				
-				return true
-			end
+			local length = {count = 0}
+
 			
 			for _, variable in ipairs(variables) do
 				if typeof(variable) == "table" then
-					if not Validate(variable,1) then
+					if not Validate(variable,1,plr,length) then
 						return
 					end
-					length = 0
+					length.count = 0
 				elseif typeof(variable) == "string" then
 					if #variable > config.RateLimits.MaxStringLength[1] then
 						funcs.Punish(plr,config.RateLimits.MaxStringLength[2] or "KICK",config.RateLimits.MaxStringLength[3] or nil)
