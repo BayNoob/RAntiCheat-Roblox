@@ -16,7 +16,7 @@ SP                         SP                  SP        SP
 Made by Bay_NoobTR
 
 
-We recommend you to enable \ workspace.AuthorityMode since RCheat is not built for physichs-based anticheat.
+We recommend you to enable \ workspace.AuthorityMode since RAntiCheat is not built for physichs-based anticheat.
 
 You can add .. in your text if you want use default reason and custom reason at the same time for example>
 
@@ -25,16 +25,16 @@ config.RateLimits = {
 }
 kicks as > Due to spamming Remote Functions
 "..Due to spamming Remote Functions"
-kicks as > You are kicked by RCheat Due to spamming Remote Functions
+kicks as > You are kicked by RAntiCheat Due to spamming Remote Functions
 "Due to spamming Remote Functions.."
-kicks as > Due to spamming Remote Functions You are kicked by RCheat
+kicks as > Due to spamming Remote Functions You are kicked by RAntiCheat
 {20,"KICK"}
-kicks as > You are kicked by RCheat (or specific default message you configured)
+kicks as > You are kicked by RAntiCheat (or specific default message you configured)
 
 
 To use RemoteFunction Wrapper in your script here is example what to do as an example >
 
-local Funcs = _G.FuncsRCheat or require(game.ServerScriptService.RCheat.Manager.Funcs)
+local Funcs = _G.FuncsRAntiCheat or require(game.ServerScriptService.RAntiCheat.Manager.Funcs)
 RemoteFunction.OnServerInvoke = Funcs.OnServerInvoke(function(player,...)
 	print("Hello World "..player.Name.."!")
 end)
@@ -43,5 +43,5 @@ end)
 You can safely delete this script
 
 
-RCheat v0.6
+RAntiCheat v0.6
 ]]

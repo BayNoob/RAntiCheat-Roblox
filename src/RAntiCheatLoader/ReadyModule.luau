@@ -1,15 +1,15 @@
 local module = {}
 
 function module.OnServerInvoke(vfunc)
-	if _G.FuncsRCheat then
+	if _G.FuncsRAntiCheat then
 		--
 	else
 		repeat 
 			task.wait()
-		until _G.FuncsRCheat
+		until _G.FuncsRAntiCheat
 	end
 	
-	return _G.FuncsRCheat.OnServerInvoke(vfunc)
+	return _G.FuncsRAntiCheat.OnServerInvoke(vfunc)
 end
 
 return module

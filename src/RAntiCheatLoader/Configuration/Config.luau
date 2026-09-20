@@ -25,7 +25,7 @@ config.Protections = {
 }
 
 config.Defaults = {
-	["DefaultKickMessage"] = "You are kicked by RCheat",
+	["DefaultKickMessage"] = "You are kicked by RAntiCheat",
 	["ExcludeAltAccountsOnBan"] = true,
 	["ApplyToUniverseOnBan"] = true,
 	["DefaultTimeOnBan"] = -1,

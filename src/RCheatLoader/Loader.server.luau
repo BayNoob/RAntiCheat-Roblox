@@ -1,1 +1,0 @@
-require(121782559013421).Load(script)

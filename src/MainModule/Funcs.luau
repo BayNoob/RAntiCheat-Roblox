@@ -1,6 +1,6 @@
 local funcs = {}
 local LimitsPerPlayer = {}
-local config = _G.ConfigRCheat
+local config = _G.ConfigRAntiCheat
 
 
 game:GetService("Players").PlayerAdded:Connect(function(plr)
@@ -25,7 +25,7 @@ end
 
 function funcs.Punish(plr:Player,punishment:string,reason: string?)
 	if not config.Defaults.DefaultKickMessage then
-		config.Defaults.DefaultKickMessage = "You have been kicked by RCheat"
+		config.Defaults.DefaultKickMessage = "You have been kicked by RAntiCheat"
 	end
 	if punishment == "KICK" then
 		if reason then
@@ -44,7 +44,7 @@ function funcs.Punish(plr:Player,punishment:string,reason: string?)
 		local banconfig = {
 			UserIds = {plr.UserId},
 			Duration = config.Defaults.DefaultTimeOnBan or -1,
-			DisplayReason = config.Defaults.DefaultKickMessage or "You are banned by RCheat", 
+			DisplayReason = config.Defaults.DefaultKickMessage or "You are banned by RAntiCheat", 
 			PrivateReason = config.Defaults.DefaultKickMessage or "Please put reasons :P",
 			ExcludeAltAccounts = config.Defaults.ExcludeAltAccountsOnBan, 
 			ApplyToUniverse = config.Defaults.ApplyToUniverseOnBan, 

@@ -1,24 +1,24 @@
 local module = {}
 
-module.Version = "v0.6.13"
+module.Version = "v0.7.25"
 
 function module.Load(loader:Instance)
 	local Funcs = script:WaitForChild("Funcs")
-	local RCheatModel = loader.Parent
-	local Config = RCheatModel:WaitForChild("Configuration"):WaitForChild("Config")
-	_G.ConfigRCheat = require(Config)
-	_G.FuncsRCheat = require(Funcs)
-	local funcsmodule = _G.FuncsRCheat
+	local RAntiCheatModel = loader.Parent
+	local Config = RAntiCheatModel:WaitForChild("Configuration"):WaitForChild("Config")
+	_G.ConfigRAntiCheat = require(Config)
+	_G.FuncsRAntiCheat = require(Funcs)
+	local funcsmodule = _G.FuncsRAntiCheat
 	funcsmodule.AntiDistanceRemove()
 	funcsmodule.RemoteEventProtection()
-	RCheatModel.Parent = game:GetService("ServerScriptService")
+	RAntiCheatModel.Parent = game:GetService("ServerScriptService")
 	pcall(function()
-		RCheatModel.DELETETHIS:Destroy()
+		RAntiCheatModel.DELETETHIS:Destroy()
 	end)
 	pcall(function()
-		RCheatModel.README:Destroy()
+		RAntiCheatModel.README:Destroy()
 	end)
-	print("RCheat module is loaded version: "..module.Version)
+	print("RAntiCheat module is loaded version: "..module.Version)
 end
 
 return module
