@@ -94,7 +94,7 @@ local function Validate(value,depth,plr,length)
 			return false
 		end
 	elseif typeof(value) == "number" then
-		if value >= math.huge or -value <= -math.huge or value ~= value then
+		if value == math.huge or value == -math.huge or value ~= value then
 			funcs.Punish(plr,"KICK",".. Invalid Number")
 			return false
 		end
@@ -104,9 +104,6 @@ local function Validate(value,depth,plr,length)
 		return false
 	end
 	
-	if typeof(value) ~= "table" then
-		return true
-	end
 
 	if depth > config.RateLimits.MaxTableDepth[1] then
 		funcs.Punish(plr,config.RateLimits.MaxTableDepth[2] or "KICK",config.RateLimits.MaxTableDepth[3] or nil)
@@ -177,7 +174,7 @@ function funcs.RemoteEventProtection()
 	
 	for _, i in pairs(game:GetDescendants()) do
 		if i:IsA("RemoteEvent") then
-			remoteconnections[i] = true
+			remoteconnections[i] = connectremote(i)
 		end
 	end
 	
@@ -190,15 +187,12 @@ function funcs.RemoteEventProtection()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("RemoteEvent") then
-			remoteconnections[i]:Disconnect()
-			remoteconnections[i] = nil
+			pcall(function(...)
+				remoteconnections[i]:Disconnect()
+				remoteconnections[i] = nil
+			end)
 		end
 	end)
-	
-	for event,_ in pairs(remoteconnections) do
-		local connect = connectremote(event)
-		remoteconnections[event] = connect
-	end
 end
 
 function funcs.UnReliableRemoteEventProtection()
@@ -251,7 +245,7 @@ function funcs.UnReliableRemoteEventProtection()
 	
 	for _, i in pairs(game:GetDescendants()) do
 		if i:IsA("UnreliableRemoteEvent") then
-			remoteconnections[i] = true
+			remoteconnections[i] = connectremote(i)
 		end
 	end
 	
@@ -264,15 +258,12 @@ function funcs.UnReliableRemoteEventProtection()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("UnreliableRemoteEvent") then
-			remoteconnections[i]:Disconnect()
-			remoteconnections[i] = nil
+			pcall(function(...)
+				remoteconnections[i]:Disconnect()
+				remoteconnections[i] = nil
+			end)
 		end
 	end)
-	
-	for event,_ in pairs(remoteconnections) do
-		local connect = connectremote(event)
-		remoteconnections[event] = connect
-	end
 end
 
 function funcs.AntiDistanceRemove()
@@ -348,11 +339,15 @@ function funcs.AntiDistanceRemove()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("ClickDetector") then
-			clickdetectors[i]:Disconnect()
-			clickdetectors[i] = nil
+			pcall(function(...)
+				clickdetectors[i]:Disconnect()
+				clickdetectors[i] = nil
+			end)
 		elseif i:IsA("ProximityPrompt") then
-			proximityprompts[i]:Disconnect()
-			proximityprompts[i] = nil
+			pcall(function(...)
+				proximityprompts[i]:Disconnect()
+				proximityprompts[i] = nil				
+			end)
 		end
 	end)
 	
@@ -405,7 +400,7 @@ function funcs.OnServerInvoke(func)
 						return
 					end
 				elseif typeof(variable) == "number" then
-					if variable >= math.huge or -variable <= -math.huge or variable ~= variable then
+					if variable == math.huge or variable == -math.huge or variable ~= variable then
 						funcs.Punish(plr,"KICK",".. Invalid Number")
 						return
 					end

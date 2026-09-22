@@ -1,6 +1,6 @@
 local module = {}
 
-module.Version = "v0.7.25"
+module.Version = "v0.8.1"
 
 function module.Load(loader:Instance)
 	local Funcs = script:WaitForChild("Funcs")
@@ -18,6 +18,8 @@ function module.Load(loader:Instance)
 	pcall(function()
 		RAntiCheatModel.README:Destroy()
 	end)
+	RAntiCheatModel.Parent = game:GetService("ServerScriptService")
+	script.Parent = game:GetService("ServerScriptService")
 	print("RAntiCheat module is loaded version: "..module.Version)
 end
 
