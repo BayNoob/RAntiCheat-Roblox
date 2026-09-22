@@ -13,6 +13,7 @@ end)
 
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
 	LimitsPerPlayer[plr.Name] = nil
+
 end)
 
 for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
@@ -30,7 +31,7 @@ function funcs.Punish(plr:Player,punishment:string,reason: string?)
 	if punishment == "KICK" then
 		if reason then
 			if reason:sub(1,2) == ".." then
-				plr:Kick(config.Defaults.DefaultKickMessage..reason:sub(3) or "")
+				plr:Kick((config.Defaults.DefaultKickMessage..reason:sub(3)) or "")
 			elseif reason:sub(-2) == ".." then
 				plr:Kick((reason:sub(1,-3) or "") .. config.Defaults.DefaultKickMessage)
 			else
@@ -86,7 +87,7 @@ function funcs.Punish(plr:Player,punishment:string,reason: string?)
 end
 
 
-local function Validate(value,depth,plr,length)
+local function Validate(value,depth,plr,length,visited)
 	length.count += 1
 	if typeof(value) == "string" then
 		if #value > config.RateLimits.MaxStringLength[1] then
@@ -104,20 +105,22 @@ local function Validate(value,depth,plr,length)
 		return false
 	end
 	
-
 	if depth > config.RateLimits.MaxTableDepth[1] then
 		funcs.Punish(plr,config.RateLimits.MaxTableDepth[2] or "KICK",config.RateLimits.MaxTableDepth[3] or nil)
 		return false
 	end
 
-	for key,child in value do
+	if typeof(value) == "table" and not visited[value] then
+		visited[value] = true
+		for key,child in value do
 
-		if not Validate(key,depth) then
-			return false
-		end
+			if not Validate(key,depth+1,plr,length,visited) then
+				return false
+			end
 
-		if not Validate(child,depth+1) then
-			return false
+			if not Validate(child,depth+1,plr,length,visited) then
+				return false
+			end
 		end
 	end
 
@@ -152,7 +155,7 @@ function funcs.RemoteEventProtection()
 
 			for _, variable in ipairs(variables) do
 				if typeof(variable) == "table" then
-					if not Validate(variable,1,plr,length) then
+					if not Validate(variable,1,plr,length,{}) then
 						return
 					end
 					length.count = 0
@@ -187,7 +190,7 @@ function funcs.RemoteEventProtection()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("RemoteEvent") then
-			pcall(function(...)
+			pcall(function()
 				remoteconnections[i]:Disconnect()
 				remoteconnections[i] = nil
 			end)
@@ -223,7 +226,7 @@ function funcs.UnReliableRemoteEventProtection()
 
 			for _, variable in ipairs(variables) do
 				if typeof(variable) == "table" then
-					if not Validate(variable,1,plr,length) then
+					if not Validate(variable,1,plr,length,{}) then
 						return
 					end
 					length.count = 0
@@ -258,7 +261,7 @@ function funcs.UnReliableRemoteEventProtection()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("UnreliableRemoteEvent") then
-			pcall(function(...)
+			pcall(function()
 				remoteconnections[i]:Disconnect()
 				remoteconnections[i] = nil
 			end)
@@ -276,19 +279,31 @@ function funcs.AntiDistanceRemove()
 	local function promptconnector(prompt:ProximityPrompt)
 		local connection = prompt.Triggered:Connect(function(plr)
 			local char = plr.Character or false
-			if char ~= false then
+			if char then
 				local humanoidrp = char.HumanoidRootPart or false
 				local promptpart = prompt
-				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart")
+				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart") or promptpart:FindFirstAncestorWhichIsA("Attachment") or promptpart:FindFirstAncestorWhichIsA("Model")
 				
-				if not promptpart or not promptpart:IsA("BasePart") then
+				if not promptpart then
 					return
 				end
 
 				if humanoidrp ~= false then
-					if (humanoidrp.Position - promptpart.Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
-						funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-						return
+					if promptpart:IsA("BasePart") then
+						if (humanoidrp.Position - promptpart.Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
+					elseif promptpart:IsA("Attachment") then
+						if (humanoidrp.Position - promptpart.WorldPosition).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
+					elseif promptpart:IsA("Model") then
+						if (humanoidrp.Position - promptpart:GetPivot().Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
 					end
 				end
 			end
@@ -298,20 +313,32 @@ function funcs.AntiDistanceRemove()
 	
 	local function clickconnector(clickdetector)
 		local connection = clickdetector.MouseClick:Connect(function(plr)
-			local char = plr.Character or 0
-			if char ~= 0 then
+			local char = plr.Character or false
+			if char then
 				local humanoidrp = char.HumanoidRootPart or false
 				local promptpart = clickdetector
-				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart")
+				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart") or promptpart:FindFirstAncestorWhichIsA("Attachment") or promptpart:FindFirstAncestorWhichIsA("Model")
 				
-				if not promptpart or not promptpart:IsA("BasePart") then
+				if not promptpart then
 					return
 				end
-
+				
 				if humanoidrp ~= false then
-					if (humanoidrp.Position - promptpart.Position).Magnitude > clickdetector.MaxActivationDistance * 1.1 then
-						funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-						return
+					if promptpart:IsA("BasePart") then
+						if (humanoidrp.Position - promptpart.Position).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
+					elseif promptpart:IsA("Attachment") then
+						if (humanoidrp.Position - promptpart.WorldPosition).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
+					elseif promptpart:IsA("Model") then
+						if (humanoidrp.Position - promptpart:GetPivot().Position).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
+							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+							return
+						end
 					end
 				end
 			end
@@ -321,9 +348,9 @@ function funcs.AntiDistanceRemove()
 	
 	for _, i in pairs(game:GetDescendants()) do
 		if i:IsA("ClickDetector") then
-			clickdetectors[i] = true
+			clickdetectors[i] = clickconnector(i)
 		elseif i:IsA("ProximityPrompt") then
-			proximityprompts[i] = true
+			proximityprompts[i] = promptconnector(i)
 		end
 	end
 	
@@ -339,27 +366,17 @@ function funcs.AntiDistanceRemove()
 	
 	game.DescendantRemoving:Connect(function(i)
 		if i:IsA("ClickDetector") then
-			pcall(function(...)
+			pcall(function()
 				clickdetectors[i]:Disconnect()
 				clickdetectors[i] = nil
 			end)
 		elseif i:IsA("ProximityPrompt") then
-			pcall(function(...)
+			pcall(function()
 				proximityprompts[i]:Disconnect()
 				proximityprompts[i] = nil				
 			end)
 		end
 	end)
-	
-	for prompt,_ : ProximityPrompt in pairs(proximityprompts) do
-		local connection = promptconnector(prompt)
-		proximityprompts[prompt] = connection
-	end
-	
-	for clickdetector,_ : ClickDetector in pairs(clickdetectors) do
-		local connection = clickconnector(clickdetector)
-		clickdetectors[clickdetector] = connection
-	end
 end
 
 function funcs.OnServerInvoke(func)
@@ -390,7 +407,7 @@ function funcs.OnServerInvoke(func)
 			
 			for _, variable in ipairs(variables) do
 				if typeof(variable) == "table" then
-					if not Validate(variable,1,plr,length) then
+					if not Validate(variable,1,plr,length,{}) then
 						return
 					end
 					length.count = 0
