@@ -127,6 +127,7 @@ local function Validate(value,depth,plr,length,visited)
 	return true
 end
 
+
 function funcs.RemoteEventProtection()
 	if config.Protections.RemoteEventProtection[1] ~= true then
 		return
@@ -276,72 +277,49 @@ function funcs.AntiDistanceRemove()
 	local proximityprompts = {}
 	local clickdetectors = {}
 	
-	local function promptconnector(prompt:ProximityPrompt)
-		local connection = prompt.Triggered:Connect(function(plr)
-			local char = plr.Character or false
-			if char then
-				local humanoidrp = char.HumanoidRootPart or false
-				local promptpart = prompt
-				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart") or promptpart:FindFirstAncestorWhichIsA("Attachment") or promptpart:FindFirstAncestorWhichIsA("Model")
-				
-				if not promptpart then
-					return
-				end
-
-				if humanoidrp ~= false then
-					if promptpart:IsA("BasePart") then
-						if (humanoidrp.Position - promptpart.Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
-					elseif promptpart:IsA("Attachment") then
-						if (humanoidrp.Position - promptpart.WorldPosition).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
-					elseif promptpart:IsA("Model") then
-						if (humanoidrp.Position - promptpart:GetPivot().Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
+	local function onconnect(plr,prompt)
+		local char = plr.Character or false
+		if char then
+			local humanoidrp = char:FindFirstChild("HumanoidRootPart")
+			local promptpart = prompt
+			promptpart = promptpart:FindFirstAncestorWhichIsA("Attachment") or promptpart:FindFirstAncestorWhichIsA("BasePart") or promptpart:FindFirstAncestorWhichIsA("Model")
+			
+			if not promptpart then
+				return
+			end
+			
+			if humanoidrp ~= false then
+				if promptpart:IsA("BasePart") then
+					if (humanoidrp.Position - promptpart.Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+						funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+						return
+					end
+				elseif promptpart:IsA("Attachment") then
+					if (humanoidrp.Position - promptpart.WorldPosition).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+						funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+						return
+					end
+				elseif promptpart:IsA("Model") then
+					if (humanoidrp.Position - promptpart:GetPivot().Position).Magnitude > (prompt.MaxActivationDistance * 1.25)+3 then
+						funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
+						return
 					end
 				end
 			end
+		end
+	end
+
+	
+	local function promptconnector(prompt:ProximityPrompt)
+		local connection = prompt.Triggered:Connect(function(plr)
+			onconnect(plr, prompt)
 		end)
 		return connection
 	end
 	
 	local function clickconnector(clickdetector)
 		local connection = clickdetector.MouseClick:Connect(function(plr)
-			local char = plr.Character or false
-			if char then
-				local humanoidrp = char.HumanoidRootPart or false
-				local promptpart = clickdetector
-				promptpart = promptpart:FindFirstAncestorWhichIsA("BasePart") or promptpart:FindFirstAncestorWhichIsA("Attachment") or promptpart:FindFirstAncestorWhichIsA("Model")
-				
-				if not promptpart then
-					return
-				end
-				
-				if humanoidrp ~= false then
-					if promptpart:IsA("BasePart") then
-						if (humanoidrp.Position - promptpart.Position).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
-					elseif promptpart:IsA("Attachment") then
-						if (humanoidrp.Position - promptpart.WorldPosition).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
-					elseif promptpart:IsA("Model") then
-						if (humanoidrp.Position - promptpart:GetPivot().Position).Magnitude > (clickdetector.MaxActivationDistance * 1.25)+3 then
-							funcs.Punish(plr,config.Protections.AntiDistanceRemove[2] or "KICK",config.Protections.AntiDistanceRemove[3] or nil)
-							return
-						end
-					end
-				end
-			end
+			onconnect(plr, clickdetector)
 		end)
 		return connection
 	end
@@ -433,5 +411,12 @@ function funcs.OnServerInvoke(func)
 	end
 end
 
+game.DescendantAdded:Connect(function(descedant)
+	
+end)
+
+game.DescendantRemoving:Connect(function(descedant)
+	
+end)
 
 return funcs
