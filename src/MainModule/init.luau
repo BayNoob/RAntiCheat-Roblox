@@ -1,6 +1,6 @@
 local module = {}
 
-module.Version = "v0.8.26"
+module.Version = "v0.8.27"
 
 function module.Load(loader:Instance)
 	local Funcs = script:WaitForChild("Funcs")
