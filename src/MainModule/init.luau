@@ -1,6 +1,6 @@
 local module = {}
 
-module.Version = "v0.8.15"
+module.Version = "v0.8.26"
 
 function module.Load(loader:Instance)
 	local Funcs = script:WaitForChild("Funcs")
@@ -9,8 +9,9 @@ function module.Load(loader:Instance)
 	_G.ConfigRAntiCheat = require(Config)
 	_G.FuncsRAntiCheat = require(Funcs)
 	local funcsmodule = _G.FuncsRAntiCheat
-	funcsmodule.AntiDistanceRemove()
-	funcsmodule.RemoteEventProtection()
+	funcsmodule.antiDistanceRemove()
+	funcsmodule.remoteEventProtection()
+	funcsmodule.unreliableRemoteEventProtection()
 	RAntiCheatModel.Parent = game:GetService("ServerScriptService")
 	pcall(function()
 		RAntiCheatModel.DELETETHIS:Destroy()
